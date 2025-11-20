@@ -454,6 +454,19 @@ def handover_ap(target_bssid):
             time.sleep(0.2)
             sio.connect(SERVER_URL, auth={'robot_id': str(robot_id)})
             print("✅ Force-handshake reconnected.")
+            
+            # ★★★ ここに追加 ★★★
+            # ハンドオーバー完了をサーバーに通知（接続AP情報を含める）
+            connected_ap_id = get_ap_id_from_bssid(target_bssid)
+            if connected_ap_id is not None:
+                sio.emit('handover_done', {
+                    'robot_id': robot_id,
+                    'connected_ap': connected_ap_id,  # APのID（0, 1, 2など）
+                    'timestamp': time.time()
+                })
+                print(f"📤 Sent handover_done: robot_id={robot_id}, connected_ap={connected_ap_id}")
+            # ★★★ ここまで追加 ★★★
+            
         except Exception as e:
             print(f"[ERROR] Force-handshake failed: {e}")
 
