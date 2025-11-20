@@ -192,7 +192,7 @@ class CameraSender(Node):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # self.host_ip = '127.0.0.1'
-        self.host_ip = '10.243.76.27'
+        self.host_ip = '10.243.76.38'
         self.port = 9001  # separate port for camera
 
         self.create_subscription(Image, '/ascamera/camera_publisher/rgb0/image', self.camera_callback, 10)

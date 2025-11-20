@@ -23,7 +23,7 @@ robot_id = ROBOT_ID
 
 
 # === Injected UDP Setup ===
-udp_host = '10.243.76.27'
+udp_host = '10.243.76.38'
 udp_port = 9005
 udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 INTERFACE = "wlan0"
@@ -497,7 +497,7 @@ def scan_loop():
 
 # SERVER_URL = 'https://0cd8b22324dc.ngrok.app'
 # SERVER_URL_RTP = 'https://ccf9aec2f845.ngrok.app:5002'
-SERVER_URL = 'http://10.243.76.27:6789'
+SERVER_URL = 'http://10.243.76.38:6789'
 
 def socketio_reconnect_watchdog():
     while True:
