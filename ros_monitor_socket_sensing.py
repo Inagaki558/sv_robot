@@ -101,6 +101,8 @@ def command(data):
     print(f"[DEBUG] data.get('robot_id')={data.get('robot_id')}, str(robot_id)={str(robot_id)}, Match={data.get('robot_id') == str(robot_id)}")
     if data.get('robot_id') == str(robot_id):
         print(f"[{robot_id}] ✅ Received command: {data}")
+        
+        # actionの処理
         action = data.get('action')
         if action:
             try:
@@ -112,9 +114,8 @@ def command(data):
                 print(f"[{robot_id}] ✅ Forwarded command to Docker: {action}")
             except Exception as e:
                 print(f"[{robot_id}] ❌ Failed to forward command to Docker: {e}")
-    else:
-        print(f"[{robot_id}] ⚠️ Command ignored - robot_id mismatch")
-
+        
+        # handoverの処理（ifブロック内に移動）
         handover = data.get('handover')
         if handover:
             handover_id = int(handover, 0)
@@ -137,6 +138,8 @@ def command(data):
                 handover_ap(target_bssid)
             finally:
                 scan_lock.release()
+    else:
+        print(f"[{robot_id}] ⚠️ Command ignored - robot_id mismatch")
 
 # handover method
 @sio.event
