@@ -169,12 +169,23 @@ def handover_method(data):
             # 기존 스레드 이미 종료됨
     elif status == 'off':
         # modeに関係なく停止（mode='off'の場合も含む）
-        print(f"Stopping handover (received mode: {mode})")
+        print(f"[STOP] Received stop request (mode: {mode})")
+        print(f"[STOP] Current state - handover_mode: {handover_mode}, thread_alive: {handover_thread.is_alive() if handover_thread else 'None'}")
+        
         if handover_thread and handover_thread.is_alive():
+            print(f"[STOP] Setting stop_event and waiting for thread...")
             handover_stop_event.set()
-            handover_thread.join()
+            handover_thread.join(timeout=5)  # 最大5秒待機
+            if handover_thread.is_alive():
+                print(f"[STOP] ⚠️ Thread did not stop within 5 seconds!")
+            else:
+                print(f"[STOP] ✅ Thread stopped successfully")
+        else:
+            print(f"[STOP] ⚠️ No active thread to stop")
+        
         handover_mode = None
         handover_thread = None
+        print(f"[STOP] Handover stopped, mode reset to None")
 
 # RSSI 기반 handover 루프
 THRESHOLD_RSSI = -70  # Random용 threshold, 필요시 조정
