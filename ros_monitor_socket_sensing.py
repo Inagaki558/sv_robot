@@ -117,6 +117,7 @@ def command(data):
         
         # handoverの処理（ifブロック内に移動）
         handover = data.get('handover')
+        print(f"[DEBUG] handover field value: {handover}, type: {type(handover)}")
         if handover:
             handover_id = int(handover, 0)
             target_bssid = AP_INFO[handover_id]['bssid'].lower()
