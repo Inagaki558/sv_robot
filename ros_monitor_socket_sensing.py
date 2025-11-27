@@ -441,19 +441,19 @@ def handover_ap(target_bssid):
         print(f"Successfully handed over to BSSID: {target_bssid}")
         last_handover_time = time.time()
 
-        # BSSID 전환 확인
-        for _ in range(10):
+        # BSSID 전환 확인 (短縮: 10回→5回, 0.5秒→0.3秒)
+        for _ in range(5):
             bssid = get_current_bssid()
             if bssid and bssid == target_bssid:
                 print(f"Confirmed BSSID after roam: {bssid}")
                 break
             print("Waiting for BSSID confirmation...")
-            time.sleep(0.5)
+            time.sleep(0.3)
         else:
             print(f"Warning: BSSID {target_bssid} not confirmed after roam.")
 
-        # 네트워크 연결 확인 (고정 IP 환경)
-        for _ in range(5):
+        # 네트워크 연결 확인 (고정 IP 환경) (短縮: 5回→3回)
+        for _ in range(3):
             try:
                 subprocess.check_output(["ping", "-c", "1", "-W", "1", "10.243.76.1"], stderr=subprocess.DEVNULL)
                 print("Network connectivity confirmed after roam.")
