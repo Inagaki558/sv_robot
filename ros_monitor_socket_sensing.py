@@ -481,7 +481,7 @@ def handover_ap(target_bssid):
                 print("Waiting for network availability...")
                 time.sleep(0.5)
 
-        # socket.io 강제 reconnect (혼합 방식: disconnect → connect)
+        # socket.io 強制 reconnect (混合方式: disconnect → connect)
         try:
             if sio.connected:
                 sio.disconnect()
@@ -489,20 +489,33 @@ def handover_ap(target_bssid):
             sio.connect(SERVER_URL, auth={'robot_id': str(robot_id)})
             print("✅ Force-handshake reconnected.")
             
-            # ★★★ ここに追加 ★★★
-            # ハンドオーバー完了をサーバーに通知（接続AP情報を含める）
-            connected_ap_id = get_ap_id_from_bssid(target_bssid)
-            if connected_ap_id is not None:
-                sio.emit('handover_done', {
-                    'robot_id': robot_id,
-                    'connected_ap': connected_ap_id,  # APのID（0, 1, 2など）
-                    'timestamp': time.time()
-                })
-                print(f"📤 Sent handover_done: robot_id={robot_id}, connected_ap={connected_ap_id}")
-            # ★★★ ここまで追加 ★★★
-            
         except Exception as e:
             print(f"[ERROR] Force-handshake failed: {e}")
+        
+        # ★★★ 再接続後にhandover_doneを送信 ★★★
+        try:
+            # 接続確認（最大5秒待機）
+            for _ in range(10):
+                if sio.connected:
+                    break
+                time.sleep(0.5)
+            
+            if sio.connected:
+                connected_ap_id = get_ap_id_from_bssid(target_bssid)
+                if connected_ap_id is not None:
+                    sio.emit('handover_done', {
+                        'robot_id': robot_id,
+                        'connected_ap': connected_ap_id,
+                        'timestamp': time.time()
+                    })
+                    print(f"📤 Sent handover_done: robot_id={robot_id}, connected_ap={connected_ap_id}")
+                else:
+                    print(f"⚠️ Could not get connected_ap_id for BSSID: {target_bssid}")
+            else:
+                print(f"⚠️ Not connected to server, cannot send handover_done")
+        except Exception as e:
+            print(f"[ERROR] Failed to send handover_done: {e}")
+        # ★★★ ここまで ★★★
 
     except subprocess.CalledProcessError as e:
         print(f"Error during handover: {e}")
