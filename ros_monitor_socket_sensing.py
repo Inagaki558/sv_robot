@@ -229,15 +229,27 @@ def handover_rssi_loop(stop_event):
 def handover_random_loop(stop_event):
     while not stop_event.is_set():
         rssi_map = get_rssi_map_from_scan_results()
+        print(f"[DEBUG] RSSI values: {rssi_map}")
+        
         # threshold 이상, HSLSV만 필터링
         candidates = [bssid for bssid, rssi in rssi_map.items() if rssi > THRESHOLD_RSSI and any(ap['bssid'].lower() == bssid for ap in AP_INFO.values())]
+        print(f"[DEBUG] Candidates (RSSI > {THRESHOLD_RSSI}): {candidates}")
+        
         if candidates:
             import random
             target_bssid = random.choice(candidates)
+            print(f"[DEBUG] Selected AP: {target_bssid}")
+            
             cur_bssid = get_current_bssid()
             if target_bssid != cur_bssid:
+                print(f"[DEBUG] Connecting to AP {target_bssid}...")
                 print(f"[Random] Roaming to random BSSID: {target_bssid}")
-                handover_ap(target_bssid)
+                result = handover_ap(target_bssid)
+                print(f"[DEBUG] Connection result: {result}")
+            else:
+                print(f"[DEBUG] Already connected to {target_bssid}, skipping handover")
+        else:
+            print(f"[DEBUG] No candidates found (all RSSI <= {THRESHOLD_RSSI})")
 
         for _ in range(10):  # 총 10초 대기 (1초씩 확인)
             if stop_event.is_set():
