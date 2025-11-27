@@ -168,13 +168,13 @@ def handover_method(data):
             handover_thread = None
             # 기존 스레드 이미 종료됨
     elif status == 'off':
-        if handover_mode == mode:
-            print(f"Stopping handover mode: {mode}")
-            if handover_thread and handover_thread.is_alive():
-                handover_stop_event.set()
-                handover_thread.join()
-            handover_mode = None
-            handover_thread = None
+        # modeに関係なく停止（mode='off'の場合も含む）
+        print(f"Stopping handover (received mode: {mode})")
+        if handover_thread and handover_thread.is_alive():
+            handover_stop_event.set()
+            handover_thread.join()
+        handover_mode = None
+        handover_thread = None
 
 # RSSI 기반 handover 루프
 THRESHOLD_RSSI = -70  # Random용 threshold, 필요시 조정
