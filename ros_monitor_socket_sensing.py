@@ -75,6 +75,8 @@ def reconnect_socket_background():
 #     print('Connected to server.')
 def connect():
     print("Connected to server.")
+    print(f"[DEBUG] Socket.IO connection established. SID: {sio.sid}")
+    print(f"[DEBUG] Registered event handlers: {list(sio.handlers['/'].keys())}")
     sio.emit('navigation_status_request')
     sio.emit('handover_status_request')
 
@@ -97,8 +99,10 @@ def navigation(data):
 
 @sio.event
 def command(data):
+    print(f"[DEBUG] ==================== COMMAND EVENT ====================")
     print(f"[DEBUG] Received 'command' event: {data}")
     print(f"[DEBUG] data.get('robot_id')={data.get('robot_id')}, str(robot_id)={str(robot_id)}, Match={data.get('robot_id') == str(robot_id)}")
+    print(f"[DEBUG] ========================================================")
     if data.get('robot_id') == str(robot_id):
         print(f"[{robot_id}] ✅ Received command: {data}")
         
