@@ -177,7 +177,7 @@ def handover_method(data):
             handover_thread = None
 
 # RSSI 기반 handover 루프
-THRESHOLD_RSSI = -60  # Random용 threshold, 필요시 조정
+THRESHOLD_RSSI = -70  # Random용 threshold, 필요시 조정
 
 # def handover_rssi_loop(stop_event):
 #     while not stop_event.is_set():
