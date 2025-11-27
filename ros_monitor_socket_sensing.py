@@ -97,9 +97,10 @@ def navigation(data):
 
 @sio.event
 def command(data):
-    print(data)
+    print(f"[DEBUG] Received 'command' event: {data}")
+    print(f"[DEBUG] data.get('robot_id')={data.get('robot_id')}, str(robot_id)={str(robot_id)}, Match={data.get('robot_id') == str(robot_id)}")
     if data.get('robot_id') == str(robot_id):
-        print(f"[{robot_id}] Received command: {data}")
+        print(f"[{robot_id}] ✅ Received command: {data}")
         action = data.get('action')
         if action:
             try:
@@ -108,9 +109,11 @@ def command(data):
                 docker_port = 9002
                 msg = json.dumps({'action': action}).encode()
                 sock.sendto(msg, (docker_ip, docker_port))
-                print(f"Forwarded command to Docker: {action}")
+                print(f"[{robot_id}] ✅ Forwarded command to Docker: {action}")
             except Exception as e:
-                print(f"Failed to forward command to Docker: {e}")
+                print(f"[{robot_id}] ❌ Failed to forward command to Docker: {e}")
+    else:
+        print(f"[{robot_id}] ⚠️ Command ignored - robot_id mismatch")
 
         handover = data.get('handover')
         if handover:
