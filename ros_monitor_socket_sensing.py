@@ -244,7 +244,13 @@ THRESHOLD_RSSI = -70  # Random용 threshold, 필요시 조정
 #         stop_event.wait(10)
 
 def handover_rssi_loop(stop_event):
+    print("[RSSI] 🟢 RSSI handover loop started")
     while not stop_event.is_set():
+        # サーバー切断時は停止
+        if not sio.connected:
+            print("[RSSI] ⚠️ Server disconnected, stopping RSSI loop")
+            return
+        
         rssi_map = get_rssi_map_from_scan_results()
         candidates = [
             (bssid, rssi) for bssid, rssi in rssi_map.items()
@@ -258,9 +264,11 @@ def handover_rssi_loop(stop_event):
                 handover_ap(best_bssid)
 
         for _ in range(10):  # 총 10초 대기 (1초씩 확인)
-            if stop_event.is_set():
+            if stop_event.is_set() or not sio.connected:
+                print("[RSSI] 🔴 RSSI handover loop stopped")
                 return
             time.sleep(1)
+    print("[RSSI] 🔴 RSSI handover loop stopped")
 
 # def handover_random_loop(stop_event):
 #     while not stop_event.is_set():
@@ -277,7 +285,13 @@ def handover_rssi_loop(stop_event):
 #         stop_event.wait(10)
 
 def handover_random_loop(stop_event):
+    print("[Random] 🟢 Random handover loop started")
     while not stop_event.is_set():
+        # サーバー切断時は停止
+        if not sio.connected:
+            print("[Random] ⚠️ Server disconnected, stopping Random loop")
+            return
+        
         rssi_map = get_rssi_map_from_scan_results()
         print(f"[DEBUG] RSSI values: {rssi_map}")
         
@@ -302,9 +316,11 @@ def handover_random_loop(stop_event):
             print(f"[DEBUG] No candidates found (all RSSI <= {THRESHOLD_RSSI})")
 
         for _ in range(10):  # 총 10초 대기 (1초씩 확인)
-            if stop_event.is_set():
+            if stop_event.is_set() or not sio.connected:
+                print("[Random] 🔴 Random handover loop stopped")
                 return
             time.sleep(1)
+    print("[Random] 🔴 Random handover loop stopped")
 
 # Measure RTT and Jitter
 @sio.event
