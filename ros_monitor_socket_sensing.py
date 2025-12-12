@@ -42,6 +42,11 @@ handover_mode = None
 handover_thread = None
 handover_stop_event = threading.Event()
 
+# sensing loop制御用
+sensing_thread = None
+sensing_stop_event = threading.Event()
+sensing_running = False  # 現在の状態を追跡
+
 #
 # RSSI moving average 저장용
 rssi_history = {}  # bssid: [rssi1, rssi2, ...]
@@ -150,10 +155,22 @@ def command(data):
 @sio.event
 def handover_method(data):
     global handover_mode, handover_thread, handover_stop_event
+    global sensing_thread, sensing_stop_event, sensing_running
     print(f"Received handover method: {data}")
     mode = data.get('mode')
     status = data.get('status')
     if status == 'on':
+        # === sensing loop開始 ===
+        if not sensing_running:
+            sensing_stop_event = threading.Event()
+            sensing_thread = threading.Thread(target=sensing_loop, args=(sensing_stop_event,), daemon=True)
+            sensing_thread.start()
+            sensing_running = True
+            print(f"[SENSING] ✅ Sensing loop started")
+        else:
+            print(f"[SENSING] ℹ️ Sensing loop already running")
+        
+        # === handover thread開始 ===
         # 기존 스레드 종료
         if handover_thread and handover_thread.is_alive():
             handover_stop_event.set()
@@ -180,20 +197,34 @@ def handover_method(data):
         print(f"[STOP] Received stop request (mode: {mode})")
         print(f"[STOP] Current state - handover_mode: {handover_mode}, thread_alive: {handover_thread.is_alive() if handover_thread else 'None'}")
         
+        # === handover thread停止 ===
         if handover_thread and handover_thread.is_alive():
-            print(f"[STOP] Setting stop_event and waiting for thread...")
+            print(f"[STOP] Setting stop_event and waiting for handover thread...")
             handover_stop_event.set()
             handover_thread.join(timeout=5)  # 最大5秒待機
             if handover_thread.is_alive():
-                print(f"[STOP] ⚠️ Thread did not stop within 5 seconds!")
+                print(f"[STOP] ⚠️ Handover thread did not stop within 5 seconds!")
             else:
-                print(f"[STOP] ✅ Thread stopped successfully")
+                print(f"[STOP] ✅ Handover thread stopped successfully")
         else:
-            print(f"[STOP] ⚠️ No active thread to stop")
+            print(f"[STOP] ⚠️ No active handover thread to stop")
         
         handover_mode = None
         handover_thread = None
-        print(f"[STOP] Handover stopped, mode reset to None")
+        
+        # === sensing loop停止 ===
+        if sensing_running and sensing_thread and sensing_thread.is_alive():
+            print(f"[STOP] Setting stop_event and waiting for sensing thread...")
+            sensing_stop_event.set()
+            sensing_thread.join(timeout=5)
+            if sensing_thread.is_alive():
+                print(f"[STOP] ⚠️ Sensing thread did not stop within 5 seconds!")
+            else:
+                print(f"[STOP] ✅ Sensing thread stopped successfully")
+        sensing_running = False
+        sensing_thread = None
+        
+        print(f"[STOP] All stopped - handover and sensing reset to None")
 
 # RSSI 기반 handover 루프
 THRESHOLD_RSSI = -70  # Random용 threshold, 필요시 조정
@@ -325,9 +356,10 @@ def ping_request(data):
 #             time.sleep(1)
 
 # skip if all connections are false
-def sensing_loop():
+def sensing_loop(stop_event):
     gateway_list = list(AP_INFO.keys())
-    while True:
+    print("[SENSING] 📊 Sensing loop started")
+    while not stop_event.is_set():
         try:
             cur_bssid = get_current_bssid()
             cur_ap_id = get_ap_id_from_bssid(cur_bssid)
@@ -571,7 +603,8 @@ def main():
 
     import threading
 
-    threading.Thread(target=sensing_loop, daemon=True).start()
+    # sensing_loopはhandover_methodのstatus='on'で開始される
+    # threading.Thread(target=sensing_loop, daemon=True).start()
     threading.Thread(target=scan_loop, daemon=True).start()
     threading.Thread(target=socketio_reconnect_watchdog, daemon=True).start()
 
