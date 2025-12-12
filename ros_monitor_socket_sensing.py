@@ -47,6 +47,9 @@ sensing_thread = None
 sensing_stop_event = threading.Event()
 sensing_running = False  # 現在の状態を追跡
 
+# 停止処理中フラグ（停止中は開始信号を無視）
+stopping_in_progress = False
+
 #
 # RSSI moving average 저장용
 rssi_history = {}  # bssid: [rssi1, rssi2, ...]
@@ -156,10 +159,17 @@ def command(data):
 def handover_method(data):
     global handover_mode, handover_thread, handover_stop_event
     global sensing_thread, sensing_stop_event, sensing_running
+    global stopping_in_progress
     print(f"Received handover method: {data}")
     mode = data.get('mode')
     status = data.get('status')
+    
     if status == 'on':
+        # 停止処理中なら開始信号を無視
+        if stopping_in_progress:
+            print(f"[⚠️ IGNORE] Received 'on' but stopping is in progress, ignoring...")
+            return
+        
         # === sensing loop開始 ===
         if not sensing_running:
             sensing_stop_event = threading.Event()
@@ -195,6 +205,11 @@ def handover_method(data):
     elif status == 'off':
         # modeに関係なく停止（mode='off'の場合も含む）
         print(f"[STOP] Received stop request (mode: {mode})")
+        
+        # 停止処理中フラグを設定（開始信号を無視するため）
+        stopping_in_progress = True
+        print(f"[STOP] 🔒 stopping_in_progress = True")
+        
         print(f"[STOP] Current state - handover_mode: {handover_mode}, thread_alive: {handover_thread.is_alive() if handover_thread else 'None'}")
         
         # === handover thread停止 ===
@@ -224,6 +239,9 @@ def handover_method(data):
         sensing_running = False
         sensing_thread = None
         
+        # 停止処理完了後にフラグを解除
+        stopping_in_progress = False
+        print(f"[STOP] 🔓 stopping_in_progress = False")
         print(f"[STOP] All stopped - handover and sensing reset to None")
 
 # RSSI 기반 handover 루프
