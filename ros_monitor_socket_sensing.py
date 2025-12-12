@@ -547,6 +547,11 @@ def handover_ap(target_bssid):
                 print("Waiting for network availability...")
                 time.sleep(0.5)
 
+        # 停止処理中なら再接続とhandover_done送信をスキップ
+        if stopping_in_progress:
+            print("[handover_ap] ⚠️ Stopping in progress, skipping reconnect and handover_done")
+            return
+
         # socket.io 強制 reconnect (混合方式: disconnect → connect)
         try:
             if sio.connected:
@@ -558,6 +563,11 @@ def handover_ap(target_bssid):
         except Exception as e:
             print(f"[ERROR] Force-handshake failed: {e}")
         
+        # 停止処理中ならhandover_done送信をスキップ
+        if stopping_in_progress:
+            print("[handover_ap] ⚠️ Stopping in progress, skipping handover_done")
+            return
+
         # ★★★ 再接続後にhandover_doneを送信 ★★★
         try:
             # 接続確認（最大5秒待機）
